@@ -1,7 +1,8 @@
 from PyQt6.QtSql import QSqlDatabase, QSqlTableModel
-from PyQt6.QtWidgets import QWidget, QLabel, QTableView, QVBoxLayout, QApplication
+from PyQt6.QtWidgets import QWidget, QLabel, QTableView, QVBoxLayout, QApplication, QPushButton
 import sys
 import sqlite3
+from add_coffee import AddCoffee
 
 
 class Espresso(QWidget):
@@ -13,6 +14,8 @@ class Espresso(QWidget):
         self.db_setup()
         self.setupUi()
 
+        self.add_coffee = AddCoffee(self)
+
     def setupUi(self):
         self.mainLayout = QVBoxLayout(self)
 
@@ -23,11 +26,16 @@ class Espresso(QWidget):
         ''')
         self.mainLayout.addWidget(self.label)
 
-        db = QSqlDatabase.addDatabase('QSQLITE')
-        db.setDatabaseName('coffee.sqlite')
-        db.open()
+        self.reload_btn = QPushButton("перезагрузить таблицу")
+        self.reload_btn.setFixedWidth(150)
+        self.reload_btn.pressed.connect(self.reload_table)
+        self.mainLayout.addWidget(self.reload_btn)
 
-        model = QSqlTableModel(self, db)
+        self.db = QSqlDatabase.addDatabase('QSQLITE')
+        self.db.setDatabaseName('coffee.sqlite')
+        self.db.open()
+
+        model = QSqlTableModel(self, self.db)
         model.setTable('coffee_info')
         model.select()
 
@@ -36,7 +44,22 @@ class Espresso(QWidget):
         self.table.setModel(model)
         self.mainLayout.addWidget(self.table)
 
+        self.add_btn = QPushButton("Добавить")
+        self.add_btn.pressed.connect(self.add_coffee_pressed)
+        self.mainLayout.addWidget(self.add_btn)
+
         self.setLayout(self.mainLayout)
+
+    def reload_table(self):
+        model = QSqlTableModel(self, self.db)
+        model.setTable('coffee_info')
+        model.select()
+
+        self.table.setModel(model)
+
+    def add_coffee_pressed(self):
+        self.hide()
+        self.add_coffee.show()
 
     def db_setup(self):
         self.con = sqlite3.connect("coffee.sqlite")
@@ -54,22 +77,27 @@ class Espresso(QWidget):
             )
         ''')
 
-        self.cur.execute('''
-            INSERT INTO coffee_info (name, roast, grind, taste, price, package)
-            VALUES ("Арабика", "Средняя", "В зернах", "Вкусный", 400, 300)
-        ''')
+        data = self.cur.execute('''
+            SELECT * FROM coffee_info
+        ''').fetchall()
 
-        self.cur.execute('''
-            INSERT INTO coffee_info (name, roast, grind, taste, price, package)
-            VALUES ("Робуста", "Темная", "Молотая", "Не очень вкусная", 700, 300)
-        ''')
+        if not data:
+            self.cur.execute('''
+                INSERT INTO coffee_info (name, roast, grind, taste, price, package)
+                VALUES ("Арабика", "Средняя", "В зернах", "Вкусный", 400, 300)
+            ''')
 
-        self.cur.execute('''
-            INSERT INTO coffee_info (name, roast, grind, taste, price, package)
-            VALUES ("Арабика", "Венская", "В зернах", "яблоко, лесной орех", 250, 50)
-        ''')
+            self.cur.execute('''
+                INSERT INTO coffee_info (name, roast, grind, taste, price, package)
+                VALUES ("Робуста", "Темная", "Молотая", "Не очень вкусная", 700, 300)
+            ''')
 
-        self.con.commit()
+            self.cur.execute('''
+                INSERT INTO coffee_info (name, roast, grind, taste, price, package)
+                VALUES ("Арабика", "Венская", "В зернах", "яблоко, лесной орех", 250, 50)
+            ''')
+
+            self.con.commit()
         self.con.close()
 
 
