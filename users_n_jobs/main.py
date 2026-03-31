@@ -48,9 +48,19 @@ def add_captain():
     db_sess.commit()
 
 
-# def add_colonists():
-#     db_sess = db_session.create_session()
-#     colonist
+def add_colonists():
+    db_sess = db_session.create_session()
+    colonists = [
+        User(name="John", surname="Doe", age=30, position="colonist",
+             speciality="biologist", address="module_2", email="john.doe@mars.org"),
+        User(name="Jane", surname="Smith", age=25, position="colonist",
+             speciality="engineer", address="module_3", email="jane.smith@mars.org"),
+        User(name="Alice", surname="Johnson", age=28, position="colonist",
+             speciality="geologist", address="module_4", email="alice.johnson@mars.org")
+    ]
+    for colonist in colonists:
+        db_sess.add(colonist)
+    db_sess.commit()
 
 
 def main():
